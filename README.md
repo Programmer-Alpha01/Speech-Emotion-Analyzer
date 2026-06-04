@@ -126,3 +126,10 @@ source venv/bin/activate  # On Windows use: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+```
+
+## Demo video
+
+https://github.com/user-attachments/assets/38aaf1c9-6970-45ec-aa06-fb88b05b9af7
+
+
