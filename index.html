@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Speech Emotion AI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root {
+      --bg: #0f0f1a;
+      --card: #1a1a2e;
+      --primary: #00d4ff;
+      --glow: rgba(0, 212, 255, 0.6);
+      --text: #e0e0ff;
+      --text-muted: #8892b0;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0f0f1a, #16213e);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: var(--card);
+      max-width: 500px;
+      width: 100%;
+      border-radius: 28px;
+      padding: 50px 40px;
+      box-shadow: 0 25px 80px rgba(0,0,0,0.7);
+      text-align: center;
+      backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(0,212,255,0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 28px;
+      padding: 2px;
+      background: linear-gradient(45deg, transparent, rgba(0,212,255,0.1), transparent);
+      -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      background: linear-gradient(90deg, #00d4ff, #a0f1ff, #00d4ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    p { color: var(--text-muted); margin-bottom: 40px; font-size: 1.15rem; }
+
+    #record {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      width: 180px;
+      height: 180px;
+      margin: 30px auto;
+      display: block;
+      position: relative;
+    }
+
+    /* Circular pulse background when recording */
+    #record::before {
+      content: '';
+      position: absolute;
+      inset: 20px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.4s;
+      pointer-events: none;
+    }
+    #record.recording::before {
+      opacity: 1;
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.15); opacity: 0.6; }
+    }
+
+    /* Microphone Icon */
+    .mic-state {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 56px;
+      color: white;
+      text-shadow: 0 0 30px var(--glow);
+      transition: all 0.4s ease;
+      z-index: 10;
+    }
+
+    /* Waveform Container */
+    .waveform {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 160px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #record.recording .waveform { opacity: 1; }
+    #record:not(.recording) .waveform { opacity: 0; }
+    #record.recording .mic-state { 
+      opacity: 0; 
+      transform: translate(-50%, -50%) scale(0.3);
+    }
+
+    /* Individual Bars */
+    .bar {
+      width: 5px;
+      background: linear-gradient(to top, #00ffff, #00d4ff, #0099ff);
+      border-radius: 10px;
+      min-height: 10px;
+      transform: scaleY(0.2);
+      transform-origin: bottom;
+      box-shadow: 0 0 20px var(--glow), 0 0 40px rgba(0,212,255,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .bar::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 30%;
+      background: linear-gradient(transparent, rgba(255,255,255,0.4));
+      border-radius: 10px;
+    }
+
+    /* Mirror effect (left side reversed) */
+    .bar:nth-child(1) { height: 20px; }
+    .bar:nth-child(2) { height: 40px; }
+    .bar:nth-child(3) { height: 70px; }
+    .bar:nth-child(4) { height: 90px; }
+    .bar:nth-child(5) { height: 100px; }
+    .bar:nth-child(6) { height: 90px; }
+    .bar:nth-child(7) { height: 70px; }
+    .bar:nth-child(8) { height: 40px; }
+    .bar:nth-child(9) { height: 20px; }
+
+    /* Reflection at bottom */
+    .waveform::after {
+      content: '';
+      position: absolute;
+      bottom: -30px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 40px;
+      background: linear-gradient(transparent, rgba(0,212,255,0.15));
+      border-radius: 50%;
+      filter: blur(20px);
+      opacity: 0.7;
+    }
+
+    #result {
+      margin-top: 40px;
+      font-size: 2.2rem;
+      font-weight: 700;
+      min-height: 70px;
+      padding: 20px;
+      border-radius: 20px;
+      background: rgba(0,212,255,0.12);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0,212,255,0.2);
+      color: #a0f1ff;
+      text-shadow: 0 0 20px rgba(0,212,255,0.5);
+    }
+    .loading { animation: textGlow 1.5s infinite alternate; }
+    @keyframes textGlow {
+      from { text-shadow: 0 0 20px rgba(0,212,255,0.5); }
+      to { text-shadow: 0 0 40px rgba(0,212,255,0.9); }
+    }
+    .footer { margin-top: 50px; font-size: 0.95rem; color: var(--text-muted); opacity: 0.9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Speech Emotion AI</h1>
+    <p>Press the button → speak → press again to detect emotion</p>
+
+    <button id="record">
+      <i class="fas fa-microphone mic-state"></i>
+
+      <div class="waveform">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+      </div>
+    </button>
+
+    <audio id="playback" controls></audio>
+    <div id="result">Ready</div>
+    <div class="footer">Real-time Voice Emotion Recognition • Powered by AI</div>
+  </div>
+
+  <script>
+    let recorder, stream, audioContext, analyser, drawRaf;
+    const btn = document.getElementById('record');
+    const playback = document.getElementById('playback');
+    const result = document.getElementById('result');
+    const bars = document.querySelectorAll('.bar');
+
+    btn.onclick = async () => {
+      if (recorder && recorder.state === "recording") {
+        recorder.stop();
+        stream.getTracks().forEach(t => t.stop());
+        if (audioContext) audioContext.close();
+        cancelAnimationFrame(drawRaf);
+        btn.classList.remove('recording');
+        result.textContent = "Analyzing...";
+        result.className = "loading";
+        return;
+      }
+
+      result.textContent = "";
+      btn.classList.add('recording');
+
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const chunks = [];
+
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.85;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const draw = () => {
+        if (!btn.classList.contains('recording')) return;
+
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        analyser.getByteFrequencyData(data);
+
+        const values = Array.from(data).slice(0, 32);
+        const step = Math.floor(values.length / 9);
+
+        bars.forEach((bar, i) => {
+          const idx = i * step;
+          const avg = values.slice(idx, idx + step).reduce((a,b) => a+b, 0) / step;
+          const percent = avg / 255;
+          const height = 20 + (percent * 90);
+          bar.style.height = `${height}px`;
+          bar.style.transform = `scaleY(${percent})`;
+        });
+
+        drawRaf = requestAnimationFrame(draw);
+      };
+      draw();
+
+      recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        playback.src = URL.createObjectURL(blob);
+        predictEmotion(blob);
+      };
+      recorder.start();
+    };
+
+    async function predictEmotion(blob) {
+      const form = new FormData();
+      form.append('file', blob, 'recording.webm');
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: form });
+        const data = await res.json();
+        result.textContent = data.emotion || "Error: " + (data.error || "Unknown");
+        result.className = "";
+      } catch (e) {
+        result.textContent = "Server error";
+        console.error(e);
+      }
+    }
+  </script>
+</body>
+</html>
